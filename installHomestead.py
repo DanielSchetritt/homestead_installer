@@ -308,13 +308,13 @@ install('curl', 'Curl')
 install('git', 'Git')
 install('virtualbox', 'VirtualBox')
 install('vim', 'Vim')
-install('python3-pip', 'Pip')
+install('python-pip', 'Pip')
 install('vagrant', 'Vagrant', optional=True)
 
 # Install python dependencies
-os.system('sudo -H pip3 install beautifulsoup4')
-os.system('sudo -H pip3 install requests')
-os.system('sudo -H pip3 install lxml')
+os.system('sudo -H pip install beautifulsoup4')
+os.system('sudo -H pip install requests')
+os.system('sudo -H pip install lxml')
 
 # Res
 
