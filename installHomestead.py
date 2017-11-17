@@ -53,7 +53,11 @@ HOMESTEAD_URL = 'https://github.com/laravel/homestead.git'
 VAGRANT_URL = 'https://raw.githubusercontent.com/GabrielSturtevant/homestead_installer/master/GetVagrantLink.py'
 SSH_SUCCESS_CODE = 256
 # Gets the number of CPUS on the system, but if for some reason it doesn't work, default to 32.
-MAX_NUMEBR_OF_CPUS = int(subprocess.check_output('nproc --all', shell=True)) or 32
+MAX_NUMBER_OF_CPUS = None
+try:
+    int(subprocess.check_output('nproc --all', shell=True))
+except Exception:
+    MAX_NUMBER_OF_CPUS = 32
 
 # Mapping of supported package managers, to their sub commands, and whether or not they use sudo.
 SUPPORTED_PACKAGE_MANAGERS = {
@@ -264,7 +268,7 @@ parser.add_argument('-c', '--number-of-cpus',
                     metavar='NUMBER_OF_CPUS',
                     type=int,
                     nargs=1,
-                    choices=range(1, MAX_NUMEBR_OF_CPUS + 1),
+                    choices=range(1, MAX_NUMBER_OF_CPUS + 1),
                     default=1,
                     help='the number of cpu cores to give the VM')
 parser.add_argument('-p', '--package-manager-name',
