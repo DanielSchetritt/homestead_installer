@@ -312,7 +312,7 @@ install('curl', 'Curl')
 install('git', 'Git')
 install('virtualbox', 'VirtualBox')
 install('vim', 'Vim')
-install('python-pip', 'Pip')
+# install('python-pip', 'Pip')
 install('vagrant', 'Vagrant', optional=True)
 
 # Install python dependencies
