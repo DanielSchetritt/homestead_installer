@@ -57,14 +57,18 @@ MAX_NUMEBR_OF_CPUS = int(subprocess.check_output('nproc --all', shell=True)) or 
 
 # Mapping of supported package managers, to their sub commands, and whether or not they use sudo.
 SUPPORTED_PACKAGE_MANAGERS = {
-    'brew': {'name':'brew', 'install': 'install','update': 'update', 'sudo': False},
-    'apt':  {'name':'brew', 'install': 'install -y', 'update': 'update', 'sudo': True}
+    'brew': {'name': 'brew', 'install': 'install', 'update': 'update', 'sudo': False},
+    'apt': {'name': 'apt', 'install': 'install -y', 'update': 'update', 'sudo': True}
 }
 # User defined variables. Will be set by the argument parser.
 USER_VARS = {}
 
+
 # System modifications
-sys.stdin = open('/dev/tty')
+try:
+    sys.stdin = open('/dev/tty')
+except OSError:
+    pass
 
 
 def md5(fname):
@@ -81,6 +85,8 @@ def ask_for_package_manager() -> dict:
     :return: a dictionary containing the name, install sub-command, update-subcommand, and privelege of the newly
              specified package manager.
     """
+    stdin_backup = sys.stdin
+    sys.stdin = sys.__stdin__
     package_manager_name = input("Please enter the command for your package manager," +
                                  "(or leave this blank and press the return key to quit):")
     if package_manager_name is '':
@@ -97,6 +103,8 @@ def ask_for_package_manager() -> dict:
         choice = input("Please choose `yes' or `no':")
     use_sudo = bool(choice is 'yes')
 
+    sys.stdin = stdin_backup
+
     return {'name': package_manager_name,
             'install': package_install_command,
             'update': package_update_command,
@@ -111,32 +119,31 @@ def choose_package_manager() -> dict:
     """
     known_managers = SUPPORTED_PACKAGE_MANAGERS
     package_manager_name = USER_VARS['package_manager_name']
-    chosen_package_manager = dict
-    use_sudo = False
-    is_set_up = False
 
-    while not is_set_up:
-        if package_manager_name in list(known_managers):
+    keys = list(known_managers)
+    chosen_package_manager = None
+    while chosen_package_manager is None:
+        if package_manager_name in keys:
             # Try the currently set Package Manager
             if shutil.which(package_manager_name) is not None:
-                print("Using package manager: {0}.".format(package_manager_name))
+                print("Using package manager: {}.".format(package_manager_name))
                 # set our environment variable to the known package manager.
                 chosen_package_manager = known_managers[package_manager_name]
-                is_set_up = True
             else:
-                print("`Warning: {0}' is not installed.".format(package_manager_name))
-        if len(list(known_managers)) > 0:
-            # Try another known package manager.
-            next_known_package_manager = known_managers.pop()
-            package_manager_name = next_known_package_manager['name']
-            print('Trying another package manager: {0}.', package_manager_name)
-        else:
-            # Try asking them for one
-            print('Warning: Your system does not have a supported package manager installed.')
-            specified_package_manager = ask_for_package_manager()
-            package_manager_name = specified_package_manager['name']
-            # Now we know about it. Let's repeat the loop and try again.
-            known_managers[package_manager_name] = specified_package_manager
+                print("`Warning: {}' is not installed.".format(package_manager_name))
+                known_managers.pop(package_manager_name)
+                keys = list(known_managers)
+                if len(keys) > 0:
+                    # Try another known package manager.
+                    package_manager_name = keys[0]
+                    print('Trying another package manager: {}.'.format(package_manager_name))
+                else:
+                    # Try asking them for one
+                    print('Warning: Your system does not have a supported package manager installed.')
+                    specified_package_manager = ask_for_package_manager()
+                    package_manager_name = specified_package_manager['name']
+                    # Now we know about it. Let's repeat the loop and try again.
+                    known_managers[package_manager_name] = specified_package_manager
 
     return chosen_package_manager
 
@@ -150,14 +157,14 @@ def set_up_package_manager():
     """
 
     package_manager = choose_package_manager()
-    install_command = package_manager['install']
-    update_command = package_manager['update']
+    install_command = package_manager['name'] + ' ' + package_manager['install']
+    update_command = package_manager['name'] + ' ' + package_manager['update']
 
     if package_manager['sudo']:
         install_command = 'sudo ' + install_command
         update_command = 'sudo ' + update_command
 
-    USER_VARS['package_manager'] = dict
+    USER_VARS['package_manager'] = {}
     USER_VARS['package_manager']['install'] = install_command
     USER_VARS['package_manager']['update'] = update_command
 
@@ -168,7 +175,7 @@ def install(program_name, common_name, optional=False):
     print('Checking whether {} is installed'.format(common_name))
     if shutil.which(program_name) is None:
         print('{} is not installed, installing now'.format(common_name))
-        cmd_code = os.system('{0} {1}'.format(install_command, program_name))
+        cmd_code = os.system('{} {}'.format(install_command, program_name))
         if cmd_code is not success_code:
             if optional:
                 print('Warning: Optional dependency not installed: {}'.format(common_name))
@@ -292,19 +299,24 @@ os.system(USER_VARS['package_manager']['update'])
 time.sleep(1)
 os.system('clear')
 
+
+
 # Ensures dependencies are met
-install('wget', 'Wget')
+install('ssh', 'SSH')
+install('wget', 'WGet')
 install('curl', 'Curl')
 install('git', 'Git')
 install('virtualbox', 'VirtualBox')
 install('vim', 'Vim')
-install('python-pip', 'Pip')
+install('python3-pip', 'Pip')
 install('vagrant', 'Vagrant', optional=True)
 
 # Install python dependencies
-os.system('sudo -H pip install beautifulsoup4')
-os.system('sudo -H pip install requests')
-os.system('sudo -H pip install lxml')
+os.system('sudo -H pip3 install beautifulsoup4')
+os.system('sudo -H pip3 install requests')
+os.system('sudo -H pip3 install lxml')
+
+# Res
 
 # Checks whether the user has configured an ssh key
 if not os.path.isfile(os.environ['HOME'] + '/.ssh/id_rsa.pub'):
